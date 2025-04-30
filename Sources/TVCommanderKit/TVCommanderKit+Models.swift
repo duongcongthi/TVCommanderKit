@@ -274,6 +274,12 @@ public struct TVRemoteCommand: Encodable {
             case sourceHDMI = "KEY_HDMI"
             case contents = "KEY_CONTENTS"
             case base64 = "base64" // Used for text input
+            case home = "KEY_HOME"
+            case rewind = "KEY_REWIND"
+            case stop = "KEY_STOP"
+            case play = "KEY_PLAY"
+            case ff = "KEY_FF"
+
         }
 
         public enum ControlType: String, Codable {
