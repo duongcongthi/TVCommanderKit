@@ -279,7 +279,7 @@ public struct TVRemoteCommand: Encodable {
             case stop = "KEY_STOP"
             case play = "KEY_PLAY"
             case ff = "KEY_FF"
-
+            case exit = "KEY_FF"
         }
 
         public enum ControlType: String, Codable {
