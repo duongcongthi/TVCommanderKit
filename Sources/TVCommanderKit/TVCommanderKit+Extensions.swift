@@ -105,15 +105,17 @@ extension TV {
 extension TVApp {
     public static func allApps() -> [TVApp] {
         [
+            browser(),
+            youtube(),
+            appleTV(),
+            netflix(),
             espn(),
             hulu(),
             max(),
-            netflix(),
             paramountPlus(),
+            spotify(),
             plutoTV(),
             primeVideo(),
-            spotify(),
-            youtube()
         ]
     }
 
@@ -151,6 +153,14 @@ extension TVApp {
 
     public static func youtube() -> TVApp {
         TVApp(id: "111299001912", name: "YouTube")
+    }
+
+    public static func appleTV() -> TVApp {
+        TVApp(id: "3201807016597", name: "Apple TV")
+    }
+
+    public static func browser() -> TVApp {
+        TVApp(id: "org.tizen.browser", name: "Internet Browser")
     }
 }
 
@@ -192,59 +202,6 @@ extension TVKeyboardLayout {
         ]
     }
 }
-
-// MARK: TVRemoteCommand
-
-extension TVRemoteCommand {
-    static func createClickCommand(_ key: TVRemoteCommand.Params.ControlKey) -> TVRemoteCommand {
-        TVRemoteCommand(
-            method: .control,
-            params: .init(
-                cmd: .click,
-                dataOfCmd: key,
-                option: false,
-                typeOfRemote: .remoteKey
-            )
-        )
-    }
-
-    static func createPressCommand(_ key: TVRemoteCommand.Params.ControlKey) -> TVRemoteCommand {
-        TVRemoteCommand(
-            method: .control,
-            params: .init(
-                cmd: .press,
-                dataOfCmd: key,
-                option: false,
-                typeOfRemote: .remoteKey
-            )
-        )
-    }
-
-    static func createReleaseCommand(_ key: TVRemoteCommand.Params.ControlKey) -> TVRemoteCommand {
-        TVRemoteCommand(
-            method: .control,
-            params: .init(
-                cmd: .release,
-                dataOfCmd: key,
-                option: false,
-                typeOfRemote: .remoteKey
-            )
-        )
-    }
-
-    static func createTextInputCommand(_ text: String) -> TVRemoteCommand {
-        TVRemoteCommand(
-            method: .control,
-            params: .init(
-                cmd: .textInput(Data(text.utf8).base64EncodedString()),
-                dataOfCmd: .base64,
-                option: false,
-                typeOfRemote: .inputString
-            )
-        )
-    }
-}
-
 
 // MARK: URL
 

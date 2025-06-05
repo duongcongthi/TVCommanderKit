@@ -15,6 +15,8 @@ public protocol TVCommanderDelegate: AnyObject {
     func tvCommander(_ tvCommander: TVCommander, didUpdateAuthState authStatus: TVAuthStatus)
     func tvCommander(_ tvCommander: TVCommander, didWriteRemoteCommand command: TVRemoteCommand)
     func tvCommander(_ tvCommander: TVCommander, didEncounterError error: TVCommanderError)
+    func tvCommander(_ tvCommander: TVCommander, didReceiveToken token: TVAuthToken)
+    func tvCommander(_ tvCommander: TVCommander, didReceiveData data: Data)
 }
 
 public class TVCommander: WebSocketDelegate {
@@ -81,28 +83,108 @@ public class TVCommander: WebSocketDelegate {
     // MARK: Send Remote Control Commands
 
     public func sendRemoteCommand(key: TVRemoteCommand.Params.ControlKey) {
-        guard isConnected else {
-            handleError(.remoteCommandNotConnectedToTV)
-            return
-        }
-        guard authStatus == .allowed else {
-            handleError(.remoteCommandAuthenticationStatusNotAllowed)
-            return
-        }
-        sendCommandOverWebSocket(.createClickCommand(key))
+        guard checkConnectionAllowed() else { return }
+
+        sendCommandOverWebSocket(createRemoteCommand(key: key))
     }
 
     /// Send a text as text field input to the TV. Text will replace existing text in TV textfield.
-    public func sendText(_ text: String) {
+    public func sendText(_ text: String, submit: Bool = false) {
+        guard checkConnectionAllowed() else { return }
+
+        let base64Text = Data(text.utf8).base64EncodedString()
+
+        let params = TVRemoteCommand.Params(
+            cmd: .textInput(base64Text),
+            dataOfCmd: .base64,
+            option: false,
+            typeOfRemote: submit ? .inputEnd : .inputString
+        )
+        let command = TVRemoteCommand(method: .control, params: params)
+        sendCommandOverWebSocket(command)
+    }
+
+    /// Send a mouse move command to the TV. x and y are deltas from the last mouse position.
+    public func mouseMove(x: Int, y: Int) {
+        guard checkConnectionAllowed() else { return }
+
+        let params: [String: Any] = [
+            "Cmd": "Move",
+            "TypeOfRemote": "ProcessMouseDevice",
+            "Position": [
+                "x": x,
+                "y": y,
+                "Time": dateAsString()
+
+            ]
+        ]
+        let payload = ["method": "ms.remote.control", "params": params] as [String: Any]
+        let endodedParams = try? JSONSerialization.data(withJSONObject: payload)
+
+        let paramsString = String(data: endodedParams!, encoding: .utf8)!
+
+        webSocket?.write(string: paramsString)
+    }
+
+    public func fetchApplicationList() {
+        guard checkConnectionAllowed() else { return }
+
+        let params: [String: Any] = [
+            "data": "",
+            "event": "ed.installedApp.get",
+            "to": "host"
+        ]
+
+        let payload = ["method": "ms.channel.emit", "params": params] as [String: Any]
+        let endodedParams = try? JSONSerialization.data(withJSONObject: payload)
+
+        let paramsString = String(data: endodedParams!, encoding: .utf8)!
+        webSocket?.write(string: paramsString)
+    }
+
+    /// Fetch the app icon for a specific application.
+    /// We receive path in response which we receive after `fetchApplicationList()` method.
+    public func fetchAppIcon(path: String) {
+        guard checkConnectionAllowed() else { return }
+
+        let params: [String: Any] = [
+            "data": [
+                "iconPath": path
+            ],
+            "event": "ed.apps.icon",
+            "to": "host"
+        ]
+
+        let payload = ["method": "ms.channel.emit", "params": params] as [String: Any]
+        let endodedParams = try? JSONSerialization.data(withJSONObject: payload)
+
+        let paramsString = String(data: endodedParams!, encoding: .utf8)!
+
+        webSocket?.write(string: paramsString)
+    }
+
+    private func checkConnectionAllowed() -> Bool {
         guard isConnected else {
             handleError(.remoteCommandNotConnectedToTV)
-            return
+            return false
         }
         guard authStatus == .allowed else {
             handleError(.remoteCommandAuthenticationStatusNotAllowed)
-            return
+            return false
         }
-        sendCommandOverWebSocket(.createTextInputCommand(text))
+
+        return true
+    }
+
+    private func dateAsString() -> String {
+        let timestamp = Date().timeIntervalSince1970
+        let timestampString = String(format: "%.6f", timestamp)
+        return timestampString
+    }
+
+    private func createRemoteCommand(key: TVRemoteCommand.Params.ControlKey) -> TVRemoteCommand {
+        let params = TVRemoteCommand.Params(cmd: .click, dataOfCmd: key, option: false, typeOfRemote: .remoteKey)
+        return TVRemoteCommand(method: .control, params: params)
     }
 
     private func sendCommandOverWebSocket(_ command: TVRemoteCommand) {
@@ -121,7 +203,7 @@ public class TVCommander: WebSocketDelegate {
             return
         }
         webSocket?.write(string: commandStr) { [weak self] in
-            guard let self else { return }
+            guard let self, self.commandQueue.isEmpty == false else { return }
             self.commandQueue.removeFirst()
             self.delegate?.tvCommander(self, didWriteRemoteCommand: command)
             self.sendNextQueuedCommandOverWebSocket()
@@ -258,9 +340,15 @@ extension TVCommander: TVWebSocketHandlerDelegate {
     
     func webSocketDidReadAuthToken(_ authToken: TVAuthToken) {
         tvConfig.token = authToken
+        delegate?.tvCommander(self, didReceiveToken: authToken)
     }
     
     func webSocketError(_ error: TVCommanderError) {
         delegate?.tvCommander(self, didEncounterError: error)
+    }
+
+    func webSocketDataReceived(_ data: Data) {
+        delegate?.tvCommander(self, didReceiveData: data)
+        print("Data received: \(data)")
     }
 }

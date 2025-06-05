@@ -212,8 +212,6 @@ public struct TVRemoteCommand: Encodable {
     public struct Params: Encodable {
         public enum Command: RawRepresentable, Encodable {
             case click
-            case press
-            case release
             case textInput(String)
 
             public init?(rawValue: String) {
@@ -224,10 +222,6 @@ public struct TVRemoteCommand: Encodable {
                 switch self {
                 case .click:
                     return "Click"
-                case .press:
-                    return "Press"
-                case .release:
-                    return "Release"
                 case .textInput(let text):
                     return text
                 }
@@ -243,10 +237,19 @@ public struct TVRemoteCommand: Encodable {
             case left = "KEY_LEFT"
             case right = "KEY_RIGHT"
             case enter = "KEY_ENTER"
+            case panelEnter = "KEY_PANEL_ENTER"
+            case idInput = "KEY_ID_INPUT"
+            case done = "KEY_DONE" // NOT SURE ITS working
             case returnKey = "KEY_RETURN"
             case channelUp = "KEY_CHUP"
             case channelDown = "KEY_CHDOWN"
             case channelList = "KEY_CH_LIST"
+            case home = "KEY_HOME"
+            case play = "KEY_PLAY"
+            case stop = "KEY_STOP"
+            case pause = "KEY_PAUSE"
+            case ff = "KEY_FF"
+            case rewind = "KEY_REWIND"
             case menu = "KEY_MENU"
             case source = "KEY_SOURCE"
             case guide = "KEY_GUIDE"
@@ -271,14 +274,10 @@ public struct TVRemoteCommand: Encodable {
             case number8 = "KEY_8"
             case number9 = "KEY_9"
             case sourceTV = "KEY_DTV"
+            case tvMode = "KEY_TV"
             case sourceHDMI = "KEY_HDMI"
             case contents = "KEY_CONTENTS"
             case base64 = "base64" // Used for text input
-            case home = "KEY_HOME"
-            case rewind = "KEY_REWIND"
-            case stop = "KEY_STOP"
-            case play = "KEY_PLAY"
-            case ff = "KEY_FF"
         }
 
         public enum ControlType: String, Codable {

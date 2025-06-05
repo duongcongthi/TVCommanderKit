@@ -14,6 +14,8 @@ protocol TVWebSocketHandlerDelegate: AnyObject {
     func webSocketDidReadAuthStatus(_ authStatus: TVAuthStatus)
     func webSocketDidReadAuthToken(_ authToken: TVAuthToken)
     func webSocketError(_ error: TVCommanderError)
+    /// Used for application list fetching.
+    func webSocketDataReceived(_ data: Data)
 }
 
 class TVWebSocketHandler {
@@ -52,6 +54,7 @@ class TVWebSocketHandler {
             handleAuthResponse(authResponse)
         } else {
             delegate?.webSocketError(.packetDataParsingFailed)
+            delegate?.webSocketDataReceived(packet)
         }
     }
 
