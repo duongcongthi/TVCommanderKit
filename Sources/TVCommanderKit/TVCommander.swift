@@ -163,6 +163,27 @@ public class TVCommander: WebSocketDelegate {
         webSocket?.write(string: paramsString)
     }
 
+    public func launchBrowser(url: String) {
+        guard checkConnectionAllowed() else { return }
+
+        let params: [String: Any] = [
+            "event": "ed.apps.launch",
+            "to": "host",
+            "data": [
+                "appId": "org.tizen.browser",
+                "action_type": "NATIVE_LAUNCH",
+                "metaTag": url
+            ]
+        ]
+
+        let payload = ["method": "ms.channel.emit", "params": params] as [String: Any]
+        let endodedParams = try? JSONSerialization.data(withJSONObject: payload)
+
+        let paramsString = String(data: endodedParams!, encoding: .utf8)!
+
+        webSocket?.write(string: paramsString)
+    }
+
     private func checkConnectionAllowed() -> Bool {
         guard isConnected else {
             handleError(.remoteCommandNotConnectedToTV)
