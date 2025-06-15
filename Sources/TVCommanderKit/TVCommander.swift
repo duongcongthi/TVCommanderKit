@@ -126,6 +126,25 @@ public class TVCommander: WebSocketDelegate {
         webSocket?.write(string: paramsString)
     }
 
+    public func sendMouseClick() {
+        guard checkConnectionAllowed() else { return }
+
+        let params: [String: Any] = [
+            "method": "ms.remote.control",
+            "params": [
+                "Cmd": "Click",
+                "TypeOfRemote": "ProcessMouseDevice" // Hoặc có thể là "SendRemoteKey" với "DataOfCmd": "KEY_ENTER"
+            ]
+        ]
+
+        let payload = ["method": "ms.channel.emit", "params": params] as [String: Any]
+        let endodedParams = try? JSONSerialization.data(withJSONObject: payload)
+
+        let paramsString = String(data: endodedParams!, encoding: .utf8)!
+
+        webSocket?.write(string: paramsString)
+    }
+    
     public func fetchApplicationList() {
         guard checkConnectionAllowed() else { return }
 
